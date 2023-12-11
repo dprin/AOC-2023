@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse::Parse, Ident, Token, LitInt, ExprLit, parse_macro_input};
+use syn::{parse::Parse, Ident, Token, LitInt, ExprLit, parse_macro_input, ItemFn};
 use std::fmt::Display;
 
 const PARAMS: u32 = 5;
@@ -57,10 +57,8 @@ impl Parse for MacroInput {
 
 #[proc_macro_attribute]
 pub fn solution(attr: TokenStream, item: TokenStream) -> TokenStream {
-    println!("{attr}");
-    println!("{item}");
-    
     let attr = parse_macro_input!(attr as MacroInput);
+    let item = parse_macro_input!(item as ItemFn);
     let test_name: Ident = attr.test_input_name.clone().unwrap();
 
     let main = quote! {
@@ -70,6 +68,7 @@ pub fn solution(attr: TokenStream, item: TokenStream) -> TokenStream {
     };
     
     println!("{attr}");
+    println!("{:#?}", item);
 
     main.into()
 }
