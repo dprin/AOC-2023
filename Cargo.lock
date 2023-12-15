@@ -114,7 +114,6 @@ dependencies = [
  "quote",
  "reqwest",
  "syn 1.0.109",
- "syner",
 ]
 
 [[package]]
@@ -762,28 +761,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "syner"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c78fb1545c37943ac4266cb7be37079b45f518c7ea4dfb8286d7e053867a3a97"
-dependencies = [
- "proc-macro2",
- "syn 1.0.109",
- "syner_derive",
-]
-
-[[package]]
-name = "syner_derive"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f68b18aaa926142df85fa458f5c165d1f1b0c5a0047ecda3957673cf549c6c3"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
