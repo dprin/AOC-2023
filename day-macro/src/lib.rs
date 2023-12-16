@@ -1,10 +1,26 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote, ToTokens};
+use std::cell::RefCell;
 use std::fmt::Debug;
-use syn::Expr;
 use syn::{parse::Parse, parse_macro_input, Ident, LitInt, Token};
+use syn::{Expr, ItemFn};
 
-#[derive(Default, Debug)]
+thread_local! {
+    static STORED_FUNCTIONS: RefCell<Vec<Function>> = RefCell::new(Vec::new());
+}
+
+struct Function {
+    args: MacroInput,
+    func: String,
+}
+
+#[derive(Default)]
+struct ExecuteInput {
+    year: u32,
+    day: u32,
+}
+
+#[derive(Default, Debug, Clone)]
 struct MacroInput {
     year: u32,
     day: u32,
@@ -43,8 +59,20 @@ impl Parse for MacroInput {
     }
 }
 
+impl Parse for ExecuteInput {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut ret = ExecuteInput::default();
+
+        ret.year = input.parse::<LitInt>()?.base10_parse::<u32>()?;
+        input.parse::<Token!(,)>()?;
+        ret.day = input.parse::<LitInt>()?.base10_parse::<u32>()?;
+
+        Ok(ret)
+    }
+}
+
 fn generate_test(params: &MacroInput, fn_name: &Ident) -> TokenStream {
-    let test_name = format_ident!("test_part_{}", &params.part);
+    let test_name = format_ident!("test_day_{}_part_{}", &params.day, &params.part);
 
     let input_name = params.test_input_name.clone().unwrap();
 
@@ -64,10 +92,38 @@ fn generate_test(params: &MacroInput, fn_name: &Ident) -> TokenStream {
     .into()
 }
 
-fn generate_main() -> TokenStream {
+fn generate_functions(day: &u32) -> TokenStream {
+    let mut ret = TokenStream::new();
+    let day: u32 = *day;
+
+    STORED_FUNCTIONS.with_borrow(|v| {
+        for f in v.into_iter().filter(|func| func.args.day == day) {
+            let func = format_ident!("{}", f.func);
+            let day = f.args.day;
+            let part = f.args.part;
+
+            let call: TokenStream = quote! {
+               println!("Day {} | Part {}: {}", #day, #part, #func(&data));
+            }
+            .into();
+
+            ret.extend(call);
+        }
+    });
+
+    ret
+}
+
+#[proc_macro]
+pub fn execute_day(tokens: TokenStream) -> TokenStream {
+    let ExecuteInput { year, day } = parse_macro_input!(tokens as ExecuteInput);
+    let funcs = proc_macro2::TokenStream::from(generate_functions(&day));
+
     quote! {
         fn main() {
+            let data = utils::fetch_input(#year, #day);
 
+            #funcs
         }
     }
     .into()
@@ -76,18 +132,23 @@ fn generate_main() -> TokenStream {
 #[proc_macro_attribute]
 pub fn solution(attr: TokenStream, item: TokenStream) -> TokenStream {
     let attr = parse_macro_input!(attr as MacroInput);
-    let item = parse_macro_input!(item as syn::ItemFn);
+    let item = parse_macro_input!(item as ItemFn);
+
+    STORED_FUNCTIONS.with_borrow_mut(|v| {
+        v.push(Function {
+            args: attr.clone(),
+            func: item.sig.ident.clone().to_string(), // this is the only fix to stop getting my
+                                                      // macro from seg_fauling
+        })
+    });
 
     let mut ret: TokenStream = TokenStream::new();
-
-    // println!("{:#?}", attr);
-    // println!("{:#?}", item);
 
     if attr.test_answer.is_some() {
         ret.extend(&mut generate_test(&attr, &item.sig.ident).into_iter());
     }
-    ret.extend(&mut generate_main().into_iter());
+
     ret.extend(TokenStream::from(item.into_token_stream()).into_iter());
 
-    ret.into()
+    ret
 }
