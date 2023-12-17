@@ -12,10 +12,27 @@ The solution macro is placed on top of the function that is a solution to a prob
 - Test: the test input that is given on the website, as a `&str`
 - Answer: the answer to the test input
 
-A example usage of the program is as follows:
+An example usage of the solution macro is as follows:
 ```rust
-#[solution(Year = 2023, Day = 1, Part = 1, Test = TEST_INPUT, Answer = 123)]
+// Year = 2023
+// Day = 1
+// Part = 2
+// Test = TEST_INPUT
+// Answer = 123
+#[solution(2023, 1, 2, TEST_INPUT, 123)]
 fn something(data: &String) -> u32 {
     unimplemented!()
 }
+```
+
+# Execute Macro
+The execute macro generates a main function so that the functions that were inputted into the solution macro can be executed (along with their output being shown).
+
+It takes input:
+- Year: year of the problem to execute
+- Day: day of the problem to execute
+
+An example usage of the execute macro is:
+```rust
+execute_day!(2023, 1);
 ```

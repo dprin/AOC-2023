@@ -32,28 +32,19 @@ struct MacroInput {
 impl Parse for MacroInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let mut ret = MacroInput::default();
-
-        while !input.is_empty() {
-            let var: Ident = input.parse()?;
-            input.parse::<Token!(=)>()?;
-
-            match var.to_string().as_str() {
-                "Year" => ret.year = input.parse::<LitInt>()?.base10_parse::<u32>()?,
-                "Day" => ret.day = input.parse::<LitInt>()?.base10_parse::<u32>()?,
-                "Part" => ret.part = input.parse::<LitInt>()?.base10_parse::<u32>()?,
-                "Test" => ret.test_input_name = Some(input.parse::<Ident>()?),
-                "Answer" => ret.test_answer = Some(input.parse::<Expr>()?),
-                s => panic!("Invalid parameter: {}", s),
-            };
-
-            if !input.is_empty() {
-                input.parse::<Token!(,)>()?;
-            }
-        }
-
-        if ret.test_answer.is_none() ^ ret.test_input_name.is_none() {
-            panic!("Please enter either both test and answer or no test and no answer");
-        }
+        
+        ret.year = input.parse::<LitInt>()?.base10_parse::<u32>()?;
+        input.parse::<Token!(,)>()?;
+        ret.day = input.parse::<LitInt>()?.base10_parse::<u32>()?;
+        input.parse::<Token!(,)>()?;
+        ret.part = input.parse::<LitInt>()?.base10_parse::<u32>()?;
+        
+        if !input.is_empty() {
+            input.parse::<Token!(,)>()?;
+            ret.test_input_name = Some(input.parse::<Ident>()?);
+            input.parse::<Token!(,)>()?;
+            ret.test_answer = Some(input.parse::<Expr>()?);
+        }        
 
         Ok(ret)
     }
